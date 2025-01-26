@@ -18,6 +18,9 @@ class CustomEllipse(QGraphicsEllipseItem):
         """Отслеживает изменения позиции элемента."""
         if change == QGraphicsEllipseItem.ItemPositionChange:
             self.canvas.update_edges(self.vertex_id)
+            # Обновляем координаты вершины в графе
+            vertex = self.canvas.graph.vertices[self.vertex_id]
+            vertex.x, vertex.y = value.x(), value.y()
         return super().itemChange(change, value)
 
 class Canvas(QGraphicsView):
@@ -28,66 +31,63 @@ class Canvas(QGraphicsView):
         self.graph = graph  # Объект графа
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
-        self.node_creation_mode = False  # Флаг для режима создания графа
+        self.graph_changing_mode = False  # Флаг для режима редактирования графа
         self.available_ids = []  # Список доступных идентификаторов
         self.selected_vertices = []  # Список выбранных вершин для создания ребра
 
-    def enable_node_creation_mode(self, enabled):
-        """Включает или выключает режим создания вершин."""
-        self.node_creation_mode = enabled
+    def enable_graph_changing_mode(self, enabled):
+        """Включает или выключает режим редактирования графа."""
+        self.graph_changing_mode = enabled
 
     def mousePressEvent(self, event):
         """Обрабатывает нажатия мыши на холсте."""
+        if not self.graph_changing_mode:
+            super().mousePressEvent(event)  # Если режим выключен, ничего не делаем
+            return
+
         position = self.mapToScene(event.pos())  # Получаем позицию на холсте
         item = self.scene.itemAt(position, QTransform())  # Проверяем, что под курсором
 
-        # Выделение вершины и создание ребра при зажатом Shift
-        if event.modifiers() == Qt.ShiftModifier and isinstance(item, QGraphicsEllipseItem):
+        # Создание рёбер при зажатом Shift
+        if event.modifiers() == Qt.ShiftModifier and event.button() == Qt.RightButton and isinstance(item, QGraphicsEllipseItem):
             self.select_vertex(item)
-        # Удаление вершины или ребра по правому клику с зажатым Alt
+        # Удаление вершин или рёбер по правому клику с Alt
         elif event.button() == Qt.RightButton and event.modifiers() == Qt.AltModifier:
             if isinstance(item, QGraphicsEllipseItem):
                 self.delete_vertex(item)
             elif isinstance(item, QGraphicsLineItem):
                 self.delete_edge(item)
-        # Создание вершины по правому клику (если режим включён)
-        elif self.node_creation_mode and event.button() == Qt.RightButton:
+        # Создание вершины по правому клику
+        elif event.button() == Qt.RightButton and event.modifiers() == Qt.ControlModifier:
             self.create_vertex(position)
         else:
-            super().mousePressEvent(event)  # Выполняем стандартное действие
+            super().mousePressEvent(event)
 
     def select_vertex(self, item):
         """Выделяет вершину и создаёт ребро, если выбрано две вершины."""
         vertex_id = item.data(0)
         if vertex_id in self.graph.vertices:
-            # Синхронизация параметров
             vertex = self.graph.vertices[vertex_id]
             item.setBrush(QBrush(QColor(vertex.highlighted_params["color"])))
             self.selected_vertices.append(vertex_id)
 
             if len(self.selected_vertices) == 2:
-                # Две вершины выбраны, создаём ребро
                 self.create_edge(self.selected_vertices[0], self.selected_vertices[1])
-                # Снимаем выделение с вершин
                 for vid in self.selected_vertices:
                     vertex_item = self.graph.vertices[vid].item
                     vertex_item.setBrush(QBrush(QColor(self.graph.vertices[vid].default_params["color"])))
-                self.selected_vertices = []  # Сбрасываем список выбранных вершин
+                self.selected_vertices = []
 
     def create_edge(self, start_id, end_id):
         """Создаёт ребро между двумя вершинами."""
-        # Запрашиваем вес рёбра
         weight, ok = self.request_edge_weight()
-        if not ok:  # Если пользователь отменил ввод, выходим
+        if not ok:
             return
 
-        # Создаём ребро в графе
         start_vertex = self.graph.vertices[start_id]
         end_vertex = self.graph.vertices[end_id]
         edge = Edge(start_vertex, end_vertex, weight=weight)
         self.graph.edges.append(edge)
-
-        # Визуализация рёбра
         self.create_edge_visual(edge)
 
     def create_edge_visual(self, edge):
@@ -100,7 +100,6 @@ class Canvas(QGraphicsView):
         line.setPen(pen)
         self.scene.addItem(line)
 
-        # Добавление веса на ребро
         mid_point = (start_pos + end_pos) / 2
         text = QGraphicsTextItem(str(edge.weight))
         text.setDefaultTextColor(QColor(edge.default_params.get("text_color", "black")))
@@ -139,23 +138,20 @@ class Canvas(QGraphicsView):
 
                 edge.line_item.setLine(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
 
-                # Обновляем текст веса рёбра
                 mid_point = (start_pos + end_pos) / 2
                 edge.text_item.setPos(mid_point.x() - edge.text_item.boundingRect().width() / 2,
                                       mid_point.y() - edge.text_item.boundingRect().height() / 2)
 
     def create_vertex(self, position):
         """Создаёт вершину на холсте."""
-        # Используем доступный идентификатор или создаём новый
         if self.available_ids:
             vertex_id = self.available_ids.pop(0)
         else:
             vertex_id = len(self.graph.vertices) + 1
 
-        vertex = Vertex(vertex_id)
+        vertex = Vertex(vertex_id, x=position.x(), y=position.y())
         self.graph.add_vertex(vertex)
 
-        # Визуализация вершины
         color = QColor(vertex.default_params["color"])
         radius = vertex.default_params["size"]
         x, y = position.x(), position.y()
@@ -173,30 +169,27 @@ class Canvas(QGraphicsView):
         )
 
         self.scene.addItem(ellipse)
-        self.graph.vertices[vertex_id].item = ellipse  # Сохраняем ссылку на визуальный элемент
+        self.graph.vertices[vertex_id].item = ellipse
 
     def delete_vertex(self, item):
-        """Удаляет вершину по правому клику с зажатым Alt."""
-        if isinstance(item, QGraphicsEllipseItem):  # Проверяем, что под курсором вершина
-            vertex_id = item.data(0)
-            if vertex_id in self.graph.vertices:
-                # Удаляем связанные рёбра
-                edges_to_remove = [edge for edge in self.graph.edges
-                                   if edge.start_vertex.id == vertex_id or edge.end_vertex.id == vertex_id]
-                for edge in edges_to_remove:
-                    self.scene.removeItem(edge.line_item)
-                    self.scene.removeItem(edge.text_item)
-                    self.graph.edges.remove(edge)
+        """Удаляет вершину по правому клику с Alt."""
+        vertex_id = item.data(0)
+        if vertex_id in self.graph.vertices:
+            edges_to_remove = [edge for edge in self.graph.edges
+                               if edge.start_vertex.id == vertex_id or edge.end_vertex.id == vertex_id]
+            for edge in edges_to_remove:
+                self.scene.removeItem(edge.line_item)
+                self.scene.removeItem(edge.text_item)
+                self.graph.edges.remove(edge)
 
-                # Удаляем вершину из графа
-                del self.graph.vertices[vertex_id]
-                self.scene.removeItem(item)  # Удаляем элемент из сцены
-                self.available_ids.append(vertex_id)  # Освобождаем идентификатор
-                self.available_ids.sort()  # Поддерживаем порядок доступных идентификаторов
-                self.update()  # Обновляем холст
+            del self.graph.vertices[vertex_id]
+            self.scene.removeItem(item)
+            self.available_ids.append(vertex_id)
+            self.available_ids.sort()
+            self.update()
 
     def delete_edge(self, item):
-        """Удаляет ребро по правому клику с зажатым Alt."""
+        """Удаляет ребро по правому клику с Alt."""
         for edge in self.graph.edges:
             if edge.line_item == item:
                 self.scene.removeItem(edge.line_item)

@@ -1,6 +1,8 @@
 class Vertex:
-    def __init__(self, id, is_highlighted=False):
+    def __init__(self, id, x=0, y=0, is_highlighted=False):
         self.id = id  # Уникальный идентификатор вершины
+        self.x = x  # Координата X вершины
+        self.y = y  # Координата Y вершины
         self.is_highlighted = is_highlighted  # Флаг выделенности
 
         # Параметры для обычной вершины

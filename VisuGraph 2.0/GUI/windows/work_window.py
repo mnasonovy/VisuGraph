@@ -44,9 +44,9 @@ class Ui_WorkWindow(object):
         self.action_menu.addAction(self.return_to_menu_action)
 
         # Режим создания графа
-        self.graph_creation_mode_action = QtWidgets.QAction("Режим редактирования графа ❌", MainWindow)
-        self.graph_creation_mode_action.setCheckable(True)
-        self.graph_creation_mode_action.setObjectName("graph_creation_mode_action")
+        self.graph_changing_mode_action = QtWidgets.QAction("Режим редактирования графа ❌", MainWindow)
+        self.graph_changing_mode_action.setCheckable(True)
+        self.graph_changing_mode_action.setObjectName("graph_changing_mode_action")
 
         # Меню алгоритмов
         self.algorithms_menu = QtWidgets.QMenu(self.menubar)
@@ -78,7 +78,7 @@ class Ui_WorkWindow(object):
 
         # Добавление меню в меню bar
         self.menubar.addMenu(self.action_menu)
-        self.menubar.addAction(self.graph_creation_mode_action)
+        self.menubar.addAction(self.graph_changing_mode_action)
         self.menubar.addMenu(self.algorithms_menu)
         self.menubar.addMenu(self.create_graph_menu)
 
