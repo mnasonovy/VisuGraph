@@ -1,7 +1,8 @@
-from PyQt5 import QtCore, QtGui, QtWidgets 
+from PyQt5 import QtCore, QtGui, QtWidgets
 from Core.vizualization import Canvas  # Импортируем Canvas для визуализации графа
 from Core.graph import Graph  # Импортируем Graph, чтобы передавать его в Canvas
-from GUI.functionals.work_window_functional import WorkWindowFunctional  # Импортируем WorkWindowFunctional
+from GUI.functionals.work_window_functional import WorkWindowFunctional  
+from Algorithms.sacred_algorihm import SacredAlgorithm # Импортируем WorkWindowFunctional
 from GUI.creating.creating_graph import (
     create_graph_from_edge_list,
     create_graph_from_adjacency_matrix,
@@ -62,16 +63,18 @@ class Ui_WorkWindow(object):
         self.dfs_action = QtWidgets.QAction("Поиск в глубину (DFS)", MainWindow)
         self.dijkstra_action = QtWidgets.QAction("Алгоритм Дейкстры", MainWindow)
         self.prim_action = QtWidgets.QAction("Алгоритм Прима", MainWindow)
-        self.mds_action = QtWidgets.QAction("Метод многомерного шкалирования (MDS)", MainWindow)  # Новая кнопка для MDS
+        # Меню алгоритмов
+        self.sacred_algorithm_action = QtWidgets.QAction("Sacred Algorithm", MainWindow)  # Измененная кнопка
 
         self.algorithms_menu.addAction(self.bfs_action)
         self.algorithms_menu.addAction(self.dfs_action)
         self.algorithms_menu.addAction(self.dijkstra_action)
         self.algorithms_menu.addAction(self.prim_action)
-        self.algorithms_menu.addAction(self.mds_action)  # Добавляем в меню
+        self.algorithms_menu.addAction(self.sacred_algorithm_action)
 
-        # Подключаем метод MDS
-        self.mds_action.triggered.connect(self.run_multidimensional_scaling)
+        # Связь кнопки Sacred Algorithm с методом sacred_algorithm_calling
+        self.sacred_algorithm_action.triggered.connect(SacredAlgorithm.sacred_algorithm_calling)
+
 
         # Меню создания графа
         self.create_graph_menu = QtWidgets.QMenu(self.menubar)
@@ -80,17 +83,17 @@ class Ui_WorkWindow(object):
 
         self.adjacency_matrix_action = QtWidgets.QAction("По матрице смежности", MainWindow)
         self.adjacency_matrix_action.triggered.connect(
-            lambda: create_graph_from_adjacency_matrix(self.canvas, self.functional)  # Передаем self.functional
+            lambda: create_graph_from_adjacency_matrix(self.canvas, self.clear_graph)
         )
 
         self.incidence_matrix_action = QtWidgets.QAction("По матрице инцидентности", MainWindow)
         self.incidence_matrix_action.triggered.connect(
-            lambda: create_graph_from_incidence_matrix(self.canvas, self.functional)  # Передаем self.functional
+            lambda: create_graph_from_incidence_matrix(self.canvas, self.clear_graph)
         )
 
         self.edge_list_action = QtWidgets.QAction("По списку рёбер", MainWindow)
         self.edge_list_action.triggered.connect(
-            lambda: create_graph_from_edge_list(self.canvas, self.functional)  # Передаем self.functional
+            lambda: create_graph_from_edge_list(self.canvas, self.clear_graph)
         )
 
         self.create_graph_menu.addAction(self.adjacency_matrix_action)
@@ -114,8 +117,3 @@ class Ui_WorkWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "VisuGraph"))
-
-    def run_multidimensional_scaling(self):
-        """Запуск алгоритма многомерного шкалирования"""
-
-
