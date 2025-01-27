@@ -61,15 +61,20 @@ def create_graph_from_edge_list(canvas, functional_instance, file_path=None):
         QMessageBox.critical(None, "Ошибка", "Не удалось загрузить файл JSON.")
 
 
-def create_graph_from_adjacency_matrix(canvas, functional_instance):
+def create_graph_from_adjacency_matrix(canvas, functional_instance, file_path=None):
     """
-    Создаёт граф на основе матрицы смежности, загруженной из файла.
+    Создаёт граф на основе матрицы смежности, загруженной из файла JSON.
+    Строки и колонки матрицы - это номера вершин (начиная с 1), а значения - веса рёбер.
     """
     functional_instance.clear_graph()  # Очищаем текущий граф
 
-    file_path, _ = QFileDialog.getOpenFileName(None, "Загрузить JSON файл", "", "JSON Files (*.json);;All Files (*)")
+    # Если файл не передан, откроем диалог для выбора файла
     if not file_path:
-        return
+        file_path, _ = QFileDialog.getOpenFileName(
+            None, "Выберите JSON файл", "", "JSON Files (*.json);;All Files (*)"
+        )
+        if not file_path:
+            return  # Если файл не выбран, выходим из функции
 
     try:
         with open(file_path, "r") as file:
@@ -82,7 +87,7 @@ def create_graph_from_adjacency_matrix(canvas, functional_instance):
 
         # Создаем вершины
         for i in range(len(adjacency_matrix)):
-            vertex_id = i + 1  # ID вершин начинаются с 1
+            vertex_id = i + 1  # Индекс вершин начинается с 1
             if vertex_id not in canvas.graph.vertices:  # Проверка на существование вершины
                 vertex = Vertex(vertex_id, x=100 + i * 50, y=100)
                 canvas.graph.add_vertex(vertex)  # Добавляем вершину в граф
@@ -92,16 +97,16 @@ def create_graph_from_adjacency_matrix(canvas, functional_instance):
         for i, row in enumerate(adjacency_matrix):
             for j, value in enumerate(row):
                 if value != 0:
-                    edge_obj = Edge(
-                        canvas.graph.vertices[i + 1],  # Обновляем индексы
-                        canvas.graph.vertices[j + 1],  # Обновляем индексы
-                        weight=value
-                    )
-                    canvas.graph.add_edge(canvas.graph.vertices[i + 1], canvas.graph.vertices[j + 1], value)  # Используем add_edge
-                    canvas.create_edge_special(i + 1, j + 1, value)  # Используем новую функцию для создания рёбер
+                    start_id = i + 1  # Начало ребра — это строка
+                    end_id = j + 1  # Конец ребра — это столбец
+                    weight = value  # Вес ребра
+
+                    # Создаем ребро с весом и добавляем его в граф
+                    canvas.create_edge_special(start_id, end_id, weight)  # Используем новую функцию для создания рёбер
 
     except (json.JSONDecodeError, IOError):
         QMessageBox.critical(None, "Ошибка", "Не удалось загрузить файл JSON.")
+
 
 
 def create_graph_from_incidence_matrix(canvas, functional_instance, file_path=None):
