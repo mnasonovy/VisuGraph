@@ -7,7 +7,6 @@ from GUI.creating.creating_graph import (
     create_graph_from_adjacency_matrix,
     create_graph_from_incidence_matrix,
 )
-from Algorithms.mds import run_multidimensional_scaling  # Импортируем функции из mds.py
 
 class Ui_WorkWindow(object):
     def setupUi(self, MainWindow):
@@ -118,5 +117,5 @@ class Ui_WorkWindow(object):
 
     def run_multidimensional_scaling(self):
         """Запуск алгоритма многомерного шкалирования"""
-        # Теперь передаем self.canvas в run_multidimensional_scaling
-        run_multidimensional_scaling(self.canvas)
+
+
