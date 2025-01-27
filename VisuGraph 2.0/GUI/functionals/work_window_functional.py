@@ -1,8 +1,8 @@
 from PyQt5 import QtWidgets
 import json
 from PyQt5.QtGui import QColor, QPen, QBrush
-from PyQt5.QtWidgets import QFileDialog, QGraphicsTextItem, QGraphicsLineItem
-from PyQt5.QtCore import QPointF
+from PyQt5.QtWidgets import QFileDialog, QGraphicsTextItem, QGraphicsLineItem, QMessageBox, QLabel, QDockWidget
+from PyQt5.QtCore import QPointF, Qt
 from Core.graph import Vertex, Edge
 from Core.vizualization import CustomEllipse, Canvas  # Убедитесь, что Canvas импортируется
 
@@ -11,6 +11,29 @@ class WorkWindowFunctional:
         self.main_window = main_window
         self.ui = ui
         self.canvas = canvas  # Передаем ссылку на Canvas
+
+        # Создаем панель для подсказки, которая будет отображаться справа
+        self.instruction_panel = QLabel(self.main_window)
+        self.instruction_panel.setStyleSheet("background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(237, 199, 183, 255), stop:1 rgba(186, 178, 181, 255));  solid #7FFFD4; padding: 5px;")
+        self.instruction_panel.setWordWrap(True)  # Переносим текст на новую строку
+        self.instruction_panel.setText(self.get_editing_instructions())
+        
+        # Создаем QDockWidget и прикрепляем подсказку к нему
+        self.dock_widget = QDockWidget(self.main_window)
+        self.dock_widget.setWidget(self.instruction_panel)
+        self.dock_widget.setFloating(False)  # Не плавающая панель
+        self.dock_widget.setFeatures(QDockWidget.NoDockWidgetFeatures)  # Отключаем возможность "открепления"
+
+        # Убираем заголовок панели (черную полосу)
+        self.dock_widget.setTitleBarWidget(QtWidgets.QWidget())  # Убираем заголовок
+
+        # Устанавливаем размер панели
+        self.dock_widget.setGeometry(0, 0, 150, 50)  # Устанавливаем размеры (ширина 250px, высота 100px)
+
+        # Прикрепляем панель с подсказкой справа
+        self.main_window.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
+
+        self.dock_widget.setVisible(False)  # Скрываем панель по умолчанию
 
         # Подключение кнопок меню к методам
         self.ui.return_to_menu_action.triggered.connect(self.return_to_start_window)
@@ -129,14 +152,35 @@ class WorkWindowFunctional:
         self.canvas.update()  # Перерисовываем холст
 
     def toggle_graph_changing_mode(self, active):
-        """Переключает режим редактирования графа с обновлением текста кнопки."""
+        """Переключает режим редактирования графа с обновлением текста кнопки и подсказки."""
         if active:
             self.ui.graph_changing_mode_action.setText("Режим редактирования графа ✅")
             self.canvas.enable_graph_changing_mode(True)  # Включаем редактирование графа
+            self.show_editing_instructions()  # Показываем подсказку
         else:
             self.ui.graph_changing_mode_action.setText("Режим редактирования графа ❌")
             self.canvas.enable_graph_changing_mode(False)  # Выключаем редактирование графа
+            self.hide_editing_instructions()  # Скрываем подсказку
+
         print(f"Режим редактирования графа: {'включен' if active else 'выключен'}")
+
+    def show_editing_instructions(self):
+        """Показывает подсказку для пользователя о том, как редактировать граф."""
+        self.dock_widget.setVisible(True)  # Показываем панель с подсказкой
+
+    def hide_editing_instructions(self):
+        """Скрывает подсказку, когда режим редактирования выключен."""
+        self.dock_widget.setVisible(False)  # Скрываем панель с подсказкой
+
+    def get_editing_instructions(self):
+        """Возвращает текст подсказки."""
+        return (
+            "Как редактировать граф:\n"
+            "- Shift + ПКМ по вершинам - создание ребра\n"
+            "- Alt + ПКМ - удаление ребра/вершины\n"
+            "- Ctrl + ПКМ - создание вершины\n"
+            "- Зажатая ЛКМ - перемещение вершины\n"
+        )
 
     def run_bfs(self):
         """Выполнение алгоритма поиска в ширину."""
