@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor, QPen, QBrush
 from PyQt5.QtWidgets import QFileDialog, QGraphicsTextItem, QGraphicsLineItem
 from PyQt5.QtCore import QPointF
 from Core.graph import Vertex, Edge
-from Core.vizualization import CustomEllipse, Canvas
+from Core.vizualization import CustomEllipse, Canvas  # Убедитесь, что Canvas импортируется
 
 class WorkWindowFunctional:
     def __init__(self, main_window, ui, canvas):
@@ -24,11 +24,6 @@ class WorkWindowFunctional:
         self.ui.dfs_action.triggered.connect(self.run_dfs)
         self.ui.dijkstra_action.triggered.connect(self.run_dijkstra)
         self.ui.prim_action.triggered.connect(self.run_prim)
-
-        # Подключение действий меню "Создать граф"
-        self.ui.adjacency_matrix_action.triggered.connect(self.create_from_adjacency_matrix)
-        self.ui.incidence_matrix_action.triggered.connect(self.create_from_incidence_matrix)
-        self.ui.edge_list_action.triggered.connect(self.create_from_edge_list)
 
     def return_to_start_window(self):
         """Возвращает пользователя в стартовое окно."""
@@ -101,25 +96,8 @@ class WorkWindowFunctional:
                 vertex.default_params.update(params)
                 self.canvas.graph.add_vertex(vertex)
 
-                # Создаём визуализацию вершины вручную
-                color = QColor(vertex.default_params["color"])
-                radius = vertex.default_params["size"]
-                x, y = position["x"], position["y"]
-
-                ellipse = CustomEllipse(vertex_id, self.canvas, x - radius, y - radius, radius * 2, radius * 2)
-                ellipse.setBrush(QBrush(color))
-                ellipse.setData(0, vertex_id)
-
-                text = QGraphicsTextItem(str(vertex_id))
-                text.setParentItem(ellipse)
-                text.setDefaultTextColor(QColor(vertex.default_params["text_color"]))
-                text.setPos(
-                    ellipse.rect().center().x() - text.boundingRect().width() / 2,
-                    ellipse.rect().center().y() - text.boundingRect().height() / 2,
-                )
-
-                self.canvas.scene.addItem(ellipse)
-                self.canvas.graph.vertices[vertex_id].item = ellipse
+                # Используем функцию create_vertex_visual для создания визуализации вершины
+                self.canvas.create_vertex_visual(vertex)
 
             # Загружаем рёбра
             for edge_data in data.get("edges", []):
@@ -149,7 +127,6 @@ class WorkWindowFunctional:
         self.canvas.graph.edges.clear()  # Очищаем рёбра в графе
         self.canvas.scene.clear()  # Очищаем холст
         self.canvas.update()  # Перерисовываем холст
-        print("Граф очищен")
 
     def toggle_graph_changing_mode(self, active):
         """Переключает режим редактирования графа с обновлением текста кнопки."""
@@ -176,15 +153,3 @@ class WorkWindowFunctional:
     def run_prim(self):
         """Выполнение алгоритма Прима."""
         print("Запущен алгоритм Прима")
-
-    def create_from_adjacency_matrix(self):
-        """Создание графа по матрице смежности."""
-        print("Создание графа по матрице смежности")
-
-    def create_from_incidence_matrix(self):
-        """Создание графа по матрице инцидентности."""
-        print("Создание графа по матрице инцидентности")
-
-    def create_from_edge_list(self):
-        """Создание графа по списку рёбер."""
-        print("Создание графа по списку рёбер")

@@ -2,6 +2,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from Core.vizualization import Canvas  # Импортируем Canvas для визуализации графа
 from Core.graph import Graph  # Импортируем Graph, чтобы передавать его в Canvas
 from GUI.functionals.work_window_functional import WorkWindowFunctional  # Импортируем WorkWindowFunctional
+from GUI.creating.creating_graph import (
+    create_graph_from_edge_list,
+    create_graph_from_adjacency_matrix,
+    create_graph_from_incidence_matrix,
+)
 
 class Ui_WorkWindow(object):
     def setupUi(self, MainWindow):
@@ -69,8 +74,19 @@ class Ui_WorkWindow(object):
         self.create_graph_menu.setObjectName("create_graph_menu")
 
         self.adjacency_matrix_action = QtWidgets.QAction("По матрице смежности", MainWindow)
+        self.adjacency_matrix_action.triggered.connect(
+            lambda: create_graph_from_adjacency_matrix(self.canvas, self.functional)  # Передаем self.functional
+        )
+
         self.incidence_matrix_action = QtWidgets.QAction("По матрице инцидентности", MainWindow)
-        self.edge_list_action = QtWidgets.QAction("По списку ребер", MainWindow)
+        self.incidence_matrix_action.triggered.connect(
+            lambda: create_graph_from_incidence_matrix(self.canvas, self.functional)  # Передаем self.functional
+        )
+
+        self.edge_list_action = QtWidgets.QAction("По списку рёбер", MainWindow)
+        self.edge_list_action.triggered.connect(
+            lambda: create_graph_from_edge_list(self.canvas, self.functional)  # Передаем self.functional
+        )
 
         self.create_graph_menu.addAction(self.adjacency_matrix_action)
         self.create_graph_menu.addAction(self.incidence_matrix_action)
