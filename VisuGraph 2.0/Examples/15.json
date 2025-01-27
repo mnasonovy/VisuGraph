@@ -1,0 +1,118 @@
+{
+    "vertices": [
+        {
+            "id": 1,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": -50.0,
+                "y": 27.0
+            }
+        },
+        {
+            "id": 3,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": -47.0,
+                "y": -56.0
+            }
+        },
+        {
+            "id": 4,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": -44.0,
+                "y": 94.0
+            }
+        },
+        {
+            "id": 2,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": 475.0,
+                "y": 311.0
+            }
+        }
+    ],
+    "edges": [
+        {
+            "start": 1,
+            "end": 4,
+            "weight": 3,
+            "params": {
+                "color": "#DB7093",
+                "text_size": 10,
+                "text_color": "green",
+                "style": "solid",
+                "thickness": 2
+            }
+        },
+        {
+            "start": 3,
+            "end": 4,
+            "weight": 14,
+            "params": {
+                "color": "#DB7093",
+                "text_size": 10,
+                "text_color": "green",
+                "style": "solid",
+                "thickness": 2
+            }
+        },
+        {
+            "start": 1,
+            "end": 3,
+            "weight": 2,
+            "params": {
+                "color": "#DB7093",
+                "text_size": 10,
+                "text_color": "green",
+                "style": "solid",
+                "thickness": 2
+            }
+        },
+        {
+            "start": 4,
+            "end": 2,
+            "weight": 2,
+            "params": {
+                "color": "#DB7093",
+                "text_size": 10,
+                "text_color": "green",
+                "style": "solid",
+                "thickness": 2
+            }
+        }
+    ]
+}

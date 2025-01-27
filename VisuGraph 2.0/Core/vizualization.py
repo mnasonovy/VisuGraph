@@ -36,6 +36,24 @@ class Canvas(QGraphicsView):
         self.graph_changing_mode = False  # Флаг для режима редактирования графа
         self.available_ids = []  # Список доступных идентификаторов
         self.selected_vertices = []  # Список выбранных вершин для создания рёбер
+        self.canvas_width = self.width()  # Начальная ширина
+        self.canvas_height = self.height()  # Начальная высота
+    
+    def resizeEvent(self, event):
+        """Обработчик события изменения размера холста."""
+        super().resizeEvent(event)  # Важно вызвать родительский resizeEvent
+
+        # Получаем новые размеры холста
+        self.canvas_width = self.width()
+        self.canvas_height = self.height()
+
+        # Выводим новые размеры холста (для отладки)
+        print(f"Размеры холста обновлены: Ширина = {self.canvas_width}, Высота = {self.canvas_height}")
+
+    def get_canvas_size(self):
+        """Возвращает актуальные размеры текущего холста (ширина и высота)."""
+        # Возвращаем актуальные размеры, обновленные через resizeEvent
+        return self.canvas_width, self.canvas_height
 
     def enable_graph_changing_mode(self, enabled):
         """Включает или выключает режим редактирования графа."""
@@ -66,7 +84,7 @@ class Canvas(QGraphicsView):
             super().mousePressEvent(event)
 
     def select_vertex(self, item):
-        """Выделяет вершину и создаёт ребро, если выбрано две вершины."""
+        """Выделяет вершину и создаёт ребро, если выбрано две вершины.""" 
         vertex_id = item.data(0)
         if vertex_id in self.graph.vertices:
             vertex = self.graph.vertices[vertex_id]
@@ -108,7 +126,7 @@ class Canvas(QGraphicsView):
             self.create_edge_visual(edge)
 
     def update_edge_visual(self, edge):
-        """Обновляет визуальное представление существующего рёбра."""
+        """Обновляет визуальное представление существующего рёбер.""" 
         start_pos = self.get_circle_edge_position(edge.start_vertex.item, edge.end_vertex.item)
         end_pos = self.get_circle_edge_position(edge.end_vertex.item, edge.start_vertex.item)
 
@@ -143,7 +161,7 @@ class Canvas(QGraphicsView):
         edge.text_item = text  # Сохраняем текстовую метку рёбер в объекте Edge
 
     def create_edge_special(self, start_id, end_id, weight):
-        """Создаёт ребро между двумя вершинами."""
+        """Создаёт ребро между двумя вершинами.""" 
         start_vertex = self.graph.vertices[start_id]
         end_vertex = self.graph.vertices[end_id]
         edge = Edge(start_vertex, end_vertex, weight=weight)
@@ -152,7 +170,7 @@ class Canvas(QGraphicsView):
 
 
     def get_circle_edge_position(self, source_item, target_item):
-        """Вычисляет точку пересечения рёбра с краем круга вершины."""
+        """Вычисляет точку пересечения рёбер с краем круга вершины.""" 
         source_center = source_item.sceneBoundingRect().center()
         target_center = target_item.sceneBoundingRect().center()
 
@@ -171,7 +189,7 @@ class Canvas(QGraphicsView):
         return QPointF(source_center.x() + offset_x, source_center.y() + offset_y)
 
     def update_edges(self, vertex_id):
-        """Обновляет все рёбра, связанные с вершиной."""
+        """Обновляет все рёбра, связанные с вершиной.""" 
         vertex = self.graph.vertices[vertex_id]
         for edge in self.graph.edges:
             if edge.start_vertex == vertex or edge.end_vertex == vertex:
@@ -188,18 +206,15 @@ class Canvas(QGraphicsView):
                     edge.text_item.setPos(mid_point.x() - edge.text_item.boundingRect().width() / 2,
                                         mid_point.y() - edge.text_item.boundingRect().height() / 2)
 
-
-
-
     def save_vertex_position(self, vertex_id, position):
-        """Сохраняет новые координаты вершины после её перемещения."""
+        """Сохраняет новые координаты вершины после её перемещения.""" 
         if vertex_id in self.graph.vertices:
             vertex = self.graph.vertices[vertex_id]
             vertex.x, vertex.y = position.x(), position.y()
 
 
     def create_vertex(self, position):
-        """Создаёт вершину на холсте."""
+        """Создаёт вершину на холсте.""" 
         if self.available_ids:
             vertex_id = self.available_ids.pop(0)
         else:
@@ -228,7 +243,7 @@ class Canvas(QGraphicsView):
         self.graph.vertices[vertex_id].item = ellipse
     
     def create_vertex_visual(self, vertex):
-        """Создаёт визуальное представление вершины на холсте."""
+        """Создаёт визуальное представление вершины на холсте.""" 
         color = QColor(vertex.default_params["color"])
         radius = vertex.default_params["size"]
         x, y = vertex.x, vertex.y
@@ -250,7 +265,7 @@ class Canvas(QGraphicsView):
 
 
     def delete_vertex(self, item):
-        """Удаляет вершину по правому клику с Alt."""
+        """Удаляет вершину по правому клику с Alt.""" 
         vertex_id = item.data(0)
         if vertex_id in self.graph.vertices:
             edges_to_remove = [edge for edge in self.graph.edges
@@ -267,7 +282,7 @@ class Canvas(QGraphicsView):
             self.update()
 
     def delete_edge(self, item):
-        """Удаляет ребро по правому клику с Alt."""
+        """Удаляет ребро по правому клику с Alt.""" 
         for edge in self.graph.edges:
             if edge.line_item == item:
                 self.scene.removeItem(edge.line_item)
@@ -277,9 +292,9 @@ class Canvas(QGraphicsView):
                 break
 
     def request_edge_weight(self):
-        """Запрашивает у пользователя вес рёбра."""
+        """Запрашивает у пользователя вес рёбер.""" 
         weight, ok = QtWidgets.QInputDialog.getInt(
-            self, "Вес рёбра", "Введите вес рёбра:", 1, 1, 100, 1
+            self, "Вес рёбер", "Введите вес рёбер:", 1, 1, 100, 1
         )
         return weight, ok
 

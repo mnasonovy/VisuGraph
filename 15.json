@@ -1,0 +1,50 @@
+{
+    "vertices": [
+        {
+            "id": 1,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": -256.0,
+                "y": 0.0
+            }
+        },
+        {
+            "id": 2,
+            "params": {
+                "color": "white",
+                "border_color": "blue",
+                "border_width": 10,
+                "text_size": 20,
+                "text_color": "green",
+                "shape": "circle",
+                "size": 20
+            },
+            "position": {
+                "x": -190.0,
+                "y": -1.0
+            }
+        }
+    ],
+    "edges": [
+        {
+            "start": 1,
+            "end": 2,
+            "weight": 2,
+            "params": {
+                "color": "#DB7093",
+                "text_size": 10,
+                "text_color": "green",
+                "style": "solid",
+                "thickness": 2
+            }
+        }
+    ]
+}

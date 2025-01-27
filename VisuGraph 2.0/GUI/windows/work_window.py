@@ -1,8 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from Core.vizualization import Canvas  # Импортируем Canvas для визуализации графа
 from Core.graph import Graph  # Импортируем Graph, чтобы передавать его в Canvas
-from GUI.functionals.work_window_functional import WorkWindowFunctional  
-from Algorithms.sacred_algorihm import SacredAlgorithm # Импортируем WorkWindowFunctional
+from GUI.functionals.work_window_functional import WorkWindowFunctional
+from Algorithms.sacred_algorihm import SacredAlgorithm  # Импортируем SacredAlgorithm
 from GUI.creating.creating_graph import (
     create_graph_from_edge_list,
     create_graph_from_adjacency_matrix,
@@ -12,7 +12,7 @@ from GUI.creating.creating_graph import (
 class Ui_WorkWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1500, 800)
+        MainWindow.resize(2000, 900)
         MainWindow.setStyleSheet(
             "background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(237, 199, 183, 255), stop:1 rgba(186, 178, 181, 255));"
         )
@@ -22,18 +22,31 @@ class Ui_WorkWindow(object):
 
         # Создаём объект Graph
         self.graph = Graph()
+
+        # Статически задаем размеры холста
+        self.canvas_width = 1600  # Статическое значение ширины холста
+        self.canvas_height = 800  # Статическое значение высоты холста
         
         # Создаём объект Canvas, передаем graph и self (UI)
         self.canvas = Canvas(self.graph, self.centralwidget)
-        self.canvas.setGeometry(QtCore.QRect(10, 10, 1480, 760))
         self.canvas.setObjectName("canvas")
-
+        
+        # Используем QVBoxLayout для адаптивного размещения
+        self.layout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.layout.addWidget(self.canvas)
+        
+        # Устанавливаем пропорцию для холста (85% от высоты и ширины)
+        self.layout.setStretchFactor(self.canvas, 85)
+        
         MainWindow.setCentralWidget(self.centralwidget)
+
+        # Создаем объект SacredAlgorithm
+        self.sacred_algorithm = SacredAlgorithm(self.canvas)
 
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1500, 21))
         self.menubar.setObjectName("menubar")
-
+        
         # Меню действий
         self.action_menu = QtWidgets.QMenu(self.menubar)
         self.action_menu.setTitle("Меню действий")
@@ -63,7 +76,6 @@ class Ui_WorkWindow(object):
         self.dfs_action = QtWidgets.QAction("Поиск в глубину (DFS)", MainWindow)
         self.dijkstra_action = QtWidgets.QAction("Алгоритм Дейкстры", MainWindow)
         self.prim_action = QtWidgets.QAction("Алгоритм Прима", MainWindow)
-        # Меню алгоритмов
         self.sacred_algorithm_action = QtWidgets.QAction("Sacred Algorithm", MainWindow)  # Измененная кнопка
 
         self.algorithms_menu.addAction(self.bfs_action)
@@ -73,8 +85,7 @@ class Ui_WorkWindow(object):
         self.algorithms_menu.addAction(self.sacred_algorithm_action)
 
         # Связь кнопки Sacred Algorithm с методом sacred_algorithm_calling
-        self.sacred_algorithm_action.triggered.connect(SacredAlgorithm.sacred_algorithm_calling)
-
+        self.sacred_algorithm_action.triggered.connect(self.sacred_algorithm.sacred_algorithm_calling)
 
         # Меню создания графа
         self.create_graph_menu = QtWidgets.QMenu(self.menubar)
@@ -83,17 +94,17 @@ class Ui_WorkWindow(object):
 
         self.adjacency_matrix_action = QtWidgets.QAction("По матрице смежности", MainWindow)
         self.adjacency_matrix_action.triggered.connect(
-            lambda: create_graph_from_adjacency_matrix(self.canvas, self.clear_graph)
+            lambda: create_graph_from_adjacency_matrix(self.canvas, self.functional)  # Вызываем clear_graph через functional
         )
 
         self.incidence_matrix_action = QtWidgets.QAction("По матрице инцидентности", MainWindow)
         self.incidence_matrix_action.triggered.connect(
-            lambda: create_graph_from_incidence_matrix(self.canvas, self.clear_graph)
+            lambda: create_graph_from_incidence_matrix(self.canvas, self.functional)  # Вызываем clear_graph через functional
         )
 
         self.edge_list_action = QtWidgets.QAction("По списку рёбер", MainWindow)
         self.edge_list_action.triggered.connect(
-            lambda: create_graph_from_edge_list(self.canvas, self.clear_graph)
+            lambda: create_graph_from_edge_list(self.canvas, self.functional)  # Вызываем clear_graph через functional
         )
 
         self.create_graph_menu.addAction(self.adjacency_matrix_action)
