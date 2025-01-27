@@ -1,8 +1,9 @@
 class Vertex:
-    def __init__(self, id, x=0, y=0, is_highlighted=False):
+    def __init__(self, id, x=0, y=0, canvas=None, is_highlighted=False):
         self.id = id  # Уникальный идентификатор вершины
         self.x = x  # Координата X вершины
         self.y = y  # Координата Y вершины
+        self.canvas = canvas  # Сохраняем объект Canvas
         self.is_highlighted = is_highlighted  # Флаг выделенности
 
         # Параметры для обычной вершины
@@ -125,9 +126,23 @@ class Graph:
         self.vertices[vertex.id] = vertex
 
     def add_edge(self, start_vertex, end_vertex, weight=1):
-        """Добавление ребра в граф"""
-        edge = Edge(start_vertex, end_vertex, weight)
-        self.edges.append(edge)
+        """Добавление ребра в граф или замена существующего"""
+        # Проверим, существует ли уже ребро между этими вершинами
+        existing_edge = None
+        for edge in self.edges:
+            if (edge.start_vertex == start_vertex and edge.end_vertex == end_vertex) or \
+               (edge.start_vertex == end_vertex and edge.end_vertex == start_vertex):
+                existing_edge = edge
+                break
+        
+        # Если ребро существует, заменим его
+        if existing_edge:
+            existing_edge.weight = weight
+            existing_edge.update_params()  # Обновим параметры ребра
+        else:
+            # Если ребро не существует, создаем новое
+            new_edge = Edge(start_vertex, end_vertex, weight)
+            self.edges.append(new_edge)
 
     def update_global_vertex_params(self, color=None, border_color=None, border_width=None, 
                                     text_size=None, text_color=None, shape=None, size=None, is_highlighted=False):
@@ -141,3 +156,4 @@ class Graph:
         for edge in self.edges:
             if edge.is_highlighted == is_highlighted:  # Применяем изменения только к выделенным или обычным рёбрам
                 edge.update_custom_params(color, text_size, style, thickness)
+

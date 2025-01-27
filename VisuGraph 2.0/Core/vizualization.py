@@ -81,19 +81,50 @@ class Canvas(QGraphicsView):
                 self.selected_vertices = []
 
     def create_edge(self, start_id, end_id):
-        """Создаёт ребро между двумя вершинами."""
+        """Создаёт ребро между двумя вершинами, заменяя существующее, если оно уже есть."""
         weight, ok = self.request_edge_weight()
         if not ok:
             return
 
         start_vertex = self.graph.vertices[start_id]
         end_vertex = self.graph.vertices[end_id]
-        edge = Edge(start_vertex, end_vertex, weight=weight)
-        self.graph.edges.append(edge)
-        self.create_edge_visual(edge)
+
+        # Проверка на существование ребра между этими вершинами
+        existing_edge = None
+        for edge in self.graph.edges:
+            if (edge.start_vertex == start_vertex and edge.end_vertex == end_vertex) or \
+               (edge.start_vertex == end_vertex and edge.end_vertex == start_vertex):
+                existing_edge = edge
+                break
+        
+        # Если ребро существует, заменяем его
+        if existing_edge:
+            existing_edge.weight = weight  # Обновляем вес существующего ребра
+            self.update_edge_visual(existing_edge)  # Обновляем визуальное представление
+        else:
+            # Если ребро не существует, создаём новое
+            edge = Edge(start_vertex, end_vertex, weight=weight)
+            self.graph.edges.append(edge)
+            self.create_edge_visual(edge)
+
+    def update_edge_visual(self, edge):
+        """Обновляет визуальное представление существующего рёбра."""
+        start_pos = self.get_circle_edge_position(edge.start_vertex.item, edge.end_vertex.item)
+        end_pos = self.get_circle_edge_position(edge.end_vertex.item, edge.start_vertex.item)
+
+        # Обновляем линию рёбер
+        if hasattr(edge, 'line_item'):
+            edge.line_item.setLine(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
+
+        # Обновляем текстовую метку рёбер
+        if hasattr(edge, 'text_item'):
+            mid_point = (start_pos + end_pos) / 2
+            edge.text_item.setPos(mid_point.x() - edge.text_item.boundingRect().width() / 2,
+                                  mid_point.y() - edge.text_item.boundingRect().height() / 2)
+            edge.text_item.setPlainText(str(edge.weight))  # Обновляем текст с новым весом
 
     def create_edge_visual(self, edge):
-        """Создаёт визуальное представление ребра."""
+        """Создаёт визуальное представление ребра.""" 
         start_pos = self.get_circle_edge_position(edge.start_vertex.item, edge.end_vertex.item)
         end_pos = self.get_circle_edge_position(edge.end_vertex.item, edge.start_vertex.item)
 

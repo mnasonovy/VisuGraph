@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets 
 from Core.vizualization import Canvas  # Импортируем Canvas для визуализации графа
 from Core.graph import Graph  # Импортируем Graph, чтобы передавать его в Canvas
 from GUI.functionals.work_window_functional import WorkWindowFunctional  # Импортируем WorkWindowFunctional
@@ -7,6 +7,7 @@ from GUI.creating.creating_graph import (
     create_graph_from_adjacency_matrix,
     create_graph_from_incidence_matrix,
 )
+from Algorithms.mds import run_multidimensional_scaling  # Импортируем функции из mds.py
 
 class Ui_WorkWindow(object):
     def setupUi(self, MainWindow):
@@ -62,11 +63,16 @@ class Ui_WorkWindow(object):
         self.dfs_action = QtWidgets.QAction("Поиск в глубину (DFS)", MainWindow)
         self.dijkstra_action = QtWidgets.QAction("Алгоритм Дейкстры", MainWindow)
         self.prim_action = QtWidgets.QAction("Алгоритм Прима", MainWindow)
+        self.mds_action = QtWidgets.QAction("Метод многомерного шкалирования (MDS)", MainWindow)  # Новая кнопка для MDS
 
         self.algorithms_menu.addAction(self.bfs_action)
         self.algorithms_menu.addAction(self.dfs_action)
         self.algorithms_menu.addAction(self.dijkstra_action)
         self.algorithms_menu.addAction(self.prim_action)
+        self.algorithms_menu.addAction(self.mds_action)  # Добавляем в меню
+
+        # Подключаем метод MDS
+        self.mds_action.triggered.connect(self.run_multidimensional_scaling)
 
         # Меню создания графа
         self.create_graph_menu = QtWidgets.QMenu(self.menubar)
@@ -109,3 +115,8 @@ class Ui_WorkWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "VisuGraph"))
+
+    def run_multidimensional_scaling(self):
+        """Запуск алгоритма многомерного шкалирования"""
+        # Теперь передаем self.canvas в run_multidimensional_scaling
+        run_multidimensional_scaling(self.canvas)
