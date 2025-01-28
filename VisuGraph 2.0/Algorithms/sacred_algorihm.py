@@ -3,6 +3,9 @@ from PyQt5 import QtWidgets
 from Core.graph import Graph, Vertex, Edge
 import math
 from Core.vizualization import Canvas
+from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QColor, QPen, QBrush, QTransform
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsTextItem, QGraphicsLineItem
 import random
 
 class SacredAlgorithm:
@@ -27,21 +30,14 @@ class SacredAlgorithm:
         if self.canvas is None:
             raise ValueError("Объект Canvas не может быть None.")
         
-        # Получаем размеры холста из объекта Canvas
         width, height = self.canvas.get_canvas_size()  
         
-        # Проверяем, что размеры корректны
         if width <= 0 or height <= 0:
             raise ValueError(f"Невозможные размеры холста: ширина = {width}, высота = {height}")
-        
-        # Устанавливаем размеры холста
+
         self.canvas_width = width
         self.canvas_height = height
-        
-        # Выводим обновленные размеры
-        print(f"Размеры холста обновлены: Ширина = {self.canvas_width}, Высота = {self.canvas_height}")
-
-        
+  
     def sacred_algorithm_calling(self):      
         self.set_canvas_dimensions()
         t_iterations, ok = QtWidgets.QInputDialog.getInt(
@@ -86,6 +82,9 @@ class SacredAlgorithm:
         
         self.convert_edges_to_theoretical_distances()
         self.randomize_vertex_positions()
+        self.scale_vertices_to_canvas()
+        self.draw_vertices_from_scaled_data()
+        self.calculate_euclidean_distances()
 
     def validate_adjacency_matrix(matrix):
         size = len(matrix)
@@ -136,33 +135,67 @@ class SacredAlgorithm:
             print(item)
         print(f"Размеры холста обновлены: Ширина = {self.canvas_width}, Высота = {self.canvas_height}")
 
+    def calculate_euclidean_distances(self):
+        """Вычисляет евклидовы расстояния между всеми парами вершин и сохраняет их в self.d_evklid."""
+        self.d_evklid = []  
+        for i in range(len(self.scale_screen)):
+            for j in range(i + 1, len(self.scale_screen)):  
+                vertex_id_1, x1, y1 = self.scale_screen[i]
+                vertex_id_2, x2, y2 = self.scale_screen[j]
+
+                distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                self.d_evklid.append((vertex_id_1, vertex_id_2, distance))
+                print(f"Евклидово расстояние между вершинами {vertex_id_1} и {vertex_id_2}: {distance:.2f}")
+
+
     def randomize_vertex_positions(self):
-        # Проверка на корректность размеров холста
         if self.canvas_width is None or self.canvas_height is None:
             raise ValueError(f"Размеры холста не установлены: ширина = {self.canvas_width}, высота = {self.canvas_height}")
-
-        # Очистка массива координат
         self.i_previous = []
-
-        # Проходим по всем вершинам (извлекаем номера вершин из матрицы)
         for i in range(len(self.matrix)):
-            # Генерируем случайные координаты для каждой вершины
             random_x = random.randint(0, self.canvas_width)
             random_y = random.randint(0, self.canvas_height)
-            
-            # Записываем номер вершины и её координаты в self.i_previous
-            self.i_previous.append((i + 1, random_x, random_y))  # Нумерация с 1, поэтому i+1
+            self.i_previous.append((i + 1, random_x, random_y)) 
             vertex = self.graph.vertices.get(i + 1)
-
-            # Если вершина не найдена, создаем новую
             if not vertex:
                 vertex = Vertex(i + 1, x=random_x, y=random_y)
                 self.graph.add_vertex(vertex)
-
-            # Обновляем координаты вершины
             vertex.x = random_x
             vertex.y = random_y
-
-            # Выводим координаты в консоль для проверки
             print(f"Вершина {i + 1} размещена на координатах ({random_x}, {random_y})")
 
+
+    def scale_vertices_to_canvas(self):
+        """Масштабирует координаты вершин, чтобы они соответствовали размеру холста."""
+        if not self.i_previous:
+            raise ValueError("Список i_previous пуст. Убедитесь, что вершины были случайным образом размещены.")
+        min_x = min(self.i_previous, key=lambda v: v[1])[1]
+        max_x = max(self.i_previous, key=lambda v: v[1])[1]
+        min_y = min(self.i_previous, key=lambda v: v[2])[2]
+        max_y = max(self.i_previous, key=lambda v: v[2])[2]
+
+        print(f"Мин. и макс. координаты по X: ({min_x}, {max_x})")
+        print(f"Мин. и макс. координаты по Y: ({min_y}, {max_y})")
+
+        scale_x = self.canvas_width / (max_x - min_x) if max_x != min_x else 1
+        scale_y = self.canvas_height / (max_y - min_y) if max_y != min_y else 1
+
+        self.scale_screen = []  
+        for i, x, y in self.i_previous:
+            vertex = self.graph.vertices.get(i)
+            if vertex:
+                scaled_x = (x - min_x) * scale_x
+                scaled_y = (y - min_y) * scale_y
+                vertex.x = scaled_x
+                vertex.y = scaled_y
+                self.scale_screen.append((i, scaled_x, scaled_y))
+
+        print(f"Коэффициенты масштаба: X={scale_x}, Y={scale_y}")
+
+
+    def draw_vertices_from_scaled_data(self):
+        """Отрисовывает вершины на холсте из данных в self.scale_screen."""
+        for vertex_id, scaled_x, scaled_y in self.scale_screen:
+            vertex = self.graph.vertices.get(vertex_id)
+            if vertex:
+                self.canvas.create_vertex(QPointF(scaled_x, scaled_y))
