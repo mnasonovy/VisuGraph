@@ -161,13 +161,28 @@ class Canvas(QGraphicsView):
         edge.text_item = text  # Сохраняем текстовую метку рёбер в объекте Edge
 
     def create_edge_special(self, start_id, end_id, weight):
-        """Создаёт ребро между двумя вершинами.""" 
-        start_vertex = self.graph.vertices[start_id]
-        end_vertex = self.graph.vertices[end_id]
-        edge = Edge(start_vertex, end_vertex, weight=weight)
-        self.graph.edges.append(edge)
-        self.create_edge_visual(edge)  # Визуализируем ребро
+        """Создаёт или обновляет ребро между двумя вершинами."""
+        
+        # Ищем ребро в графе
+        existing_edge = None
+        for edge in self.graph.edges:
+            if (edge.start_vertex.id == start_id and edge.end_vertex.id == end_id) or \
+            (edge.start_vertex.id == end_id and edge.end_vertex.id == start_id):
+                existing_edge = edge
+                break
 
+        if existing_edge:
+            # Если ребро существует, обновляем его вес
+            existing_edge.weight = weight
+            self.update_edge_visual(existing_edge)  # Обновляем визуализацию ребра
+            print(f"Обновлено ребро между вершинами {start_id} и {end_id} с новым весом {weight}")
+        else:
+            # Если ребро не существует, создаём новое
+            start_vertex = self.graph.vertices[start_id]
+            end_vertex = self.graph.vertices[end_id]
+            edge = Edge(start_vertex, end_vertex, weight=weight)
+            self.graph.edges.append(edge)
+            self.create_edge_visual(edge)  # Визуализируем новое ребро
 
     def get_circle_edge_position(self, source_item, target_item):
         """Вычисляет точку пересечения рёбер с краем круга вершины.""" 

@@ -1,12 +1,16 @@
 import json
-from PyQt5 import QtWidgets
-from Core.graph import Graph, Vertex, Edge
 import math
-from Core.vizualization import Canvas
-from PyQt5.QtCore import Qt, QPointF
+import random
+import matplotlib.pyplot as plt
+
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QColor, QPen, QBrush, QTransform
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsTextItem, QGraphicsLineItem
-import random
+
+from Core.graph import Graph, Vertex, Edge
+from Core.vizualization import Canvas
+
 
 class SacredAlgorithm:
     def __init__(self, canvas):
@@ -24,6 +28,10 @@ class SacredAlgorithm:
         self.canvas_height = None  
         self.graph = Graph()
         self.canvas = canvas
+        self.timer = QTimer()  # Инициализация таймера для анимации
+        self.timer.timeout.connect(self.on_iteration)  # Подключение таймера к слоту
+
+        self.current_iteration = 0
 
     def set_canvas_dimensions(self):
         """Устанавливаем размеры холста для использования в алгоритме"""
@@ -37,10 +45,10 @@ class SacredAlgorithm:
 
         self.canvas_width = round(width*0.9)
         self.canvas_height = round(height*0.9)
-  
-    def sacred_algorithm_calling(self):
-        self.clear_canvas_and_graph()      
+
+    def sacred_algorithm_calling(self):     
         self.set_canvas_dimensions()
+
         t_iterations, ok = QtWidgets.QInputDialog.getInt(
             None, "Количество итераций", "Введите количество итераций:", 10, 1, 100000, 1
         )
@@ -77,16 +85,52 @@ class SacredAlgorithm:
 
         except (json.JSONDecodeError, ValueError) as e:
             QtWidgets.QMessageBox.critical(None, "Ошибка", f"Возникла ошибка при загрузке матрицы: {e}")
-
         except Exception as e:
             QtWidgets.QMessageBox.critical(None, "Ошибка", f"Непредвиденная ошибка: {e}")
-        
+
+        # Нулевая итерация - подготовка
         self.convert_edges_to_theoretical_distances()
         self.randomize_vertex_positions()
-        self.scale_vertices_to_canvas()
         self.calculate_euclidean_distances()
-        self.draw_vertices_and_edges_from_scaled_data()
         self.calculate_error()
+        self.scale_vertices_to_canvas()
+        self.draw_vertices_and_edges_from_scaled_data()
+        self.update_vertex_positions()
+
+        # Начинаем цикл для t_iterations
+        self.current_iteration = 1  # Начинаем с первой итерации
+        self.timer.start(100) 
+        self.on_iteration() # Запускаем таймер с интервалом 500 мс (или любое другое значение)
+
+    def on_iteration(self):
+        """Обработчик итерации, вызываемый по таймеру"""
+        if self.current_iteration <= self.t_iterations:
+            print(f"Итерация {self.current_iteration}/{self.t_iterations}")
+
+            self.i_previous = self.i_current  # Сохраняем предыдущие координаты
+
+            # Шаги алгоритма
+            self.calculate_euclidean_distances()  # Вычисление евклидовых расстояний
+            self.calculate_error()  # Вычисление ошибки
+            self.scale_vertices_to_canvas()  # Масштабируем координаты
+            self.clear_canvas_and_graph()  # Очищаем холст и граф
+            self.draw_vertices_and_edges_from_scaled_data()  # Создаём новые вершины и рёбра на холсте
+            self.update_vertex_positions()  # Обновляем координаты вершин
+
+            self.current_iteration += 1  # Переход к следующей итерации
+        else:
+            self.timer.stop()  # Останавливаем таймер, когда все итерации завершены
+
+            # Финализируем
+            self.i_previous = self.i_current  # Обновляем предыдущие координаты после всех итераций
+            self.scale_vertices_to_canvas()  # Финальная подгонка под холст
+            self.calculate_euclidean_distances()  # Пересчитываем евклидовы расстояния
+            self.clear_canvas_and_graph()  # Очистка холста и графа
+            self.draw_vertices_and_edges_from_scaled_data()  # Финальный вывод на холст
+            self.plot_error_graph()
+
+
+
 
     def validate_adjacency_matrix(matrix):
         size = len(matrix)
@@ -199,28 +243,32 @@ class SacredAlgorithm:
 
     def draw_vertices_and_edges_from_scaled_data(self):
         """Отрисовывает вершины и рёбра на холсте из данных в self.scale_screen и self.d_evklid."""
+        # Создаём новые вершины
         for vertex_id, scaled_x, scaled_y in self.scale_screen:
-            vertex = self.graph.vertices.get(vertex_id)
-            if vertex:
-                self.canvas.create_vertex(QPointF(scaled_x, scaled_y))
+            vertex = Vertex(vertex_id, x=scaled_x, y=scaled_y)
+            self.graph.add_vertex(vertex)  # Добавляем вершину в граф
+            self.canvas.create_vertex(QPointF(scaled_x, scaled_y))  # Отображаем её на холсте
 
+        # Создаём новые рёбра
         for start_id, end_id, weight in self.d_evklid:
             start_vertex = self.graph.vertices.get(start_id)
             end_vertex = self.graph.vertices.get(end_id)
 
             if start_vertex and end_vertex:
                 weight = round(weight)
-                self.canvas.create_edge_special(start_id, end_id, weight)
+                self.canvas.create_edge_special(start_id, end_id, weight)  # Создаём новое ребро
+
+        self.canvas.update()  # Обновляем холст
+        self.scale_screen = []  # Оч
+
 
     def clear_canvas_and_graph(self):
         """Очистить холст и граф от старых данных (вершин и рёбер)."""
+        # Очищаем все вершины и рёбра
+        self.canvas.scene.clear()  # Очистить холст от всех рёбер и текстов
         self.canvas.graph.vertices.clear()  # Очищаем вершины в графе
         self.canvas.graph.edges.clear()  # Очищаем рёбра в графе
-        self.canvas.scene.clear()  # Очищаем холст
-        self.canvas.update() 
-        self.graph.vertices.clear()
-        self.graph.edges.clear()
-        self.available_ids = []
+        self.canvas.update()  # Обновляем холст
 
     def calculate_error(self):
         """Вычисляет ошибку по формуле sum по i,j i>j (dij - dij_evklid)^2 и сохраняет её в self.error."""
@@ -234,6 +282,66 @@ class SacredAlgorithm:
             total_error += error_term
         self.error.append(total_error)
         print(f"Общая ошибка: {total_error}")
+
+    def plot_error_graph(self):
+        """Функция для построения графика зависимости ошибки от номера итерации"""
+        plt.figure(figsize=(8, 6))
+        plt.plot(range(1, len(self.error) + 1), self.error, marker='o', color='b', linestyle='-', markersize=5)
+        plt.title('Зависимость ошибки от номера итерации')
+        plt.xlabel('Номер итерации')
+        plt.ylabel('Ошибка')
+        plt.grid(True)
+        plt.show()
+
+    def update_vertex_positions(self):
+        """Вычисляет улучшенные координаты для каждой вершины по заданной формуле."""
+        self.i_current = []
+        for i, (vertex_id_i, x_i_prev, y_i_prev) in enumerate(self.i_previous):
+            vertex_i = self.graph.vertices.get(vertex_id_i)
+            if not vertex_i:
+                continue  
+            x_i_current = x_i_prev
+            y_i_current = y_i_prev
+            for j, (vertex_id_j, x_j_prev, y_j_prev) in enumerate(self.i_previous):
+                if i == j:
+                    continue 
+
+                vertex_j = self.graph.vertices.get(vertex_id_j)
+                if not vertex_j:
+                    continue  
+
+                dij = None
+                for edge in self.d:
+                    if (edge[0] == vertex_id_i and edge[1] == vertex_id_j) or (edge[0] == vertex_id_j and edge[1] == vertex_id_i):
+                        dij = edge[2]
+                        break
+
+                if dij is None:
+                    continue 
+
+                dij_evklid = None
+                for start, end, dist in self.d_evklid:
+                    if (start == vertex_id_i and end == vertex_id_j) or (start == vertex_id_j and end == vertex_id_i):
+                        dij_evklid = dist
+                        break
+
+                if dij_evklid is None:
+                    continue  
+
+                factor = (dij - dij_evklid) / dij_evklid
+                dx = x_i_prev - x_j_prev
+                dy = y_i_prev - y_j_prev
+
+                x_i_current += self.alpha * factor * dx
+                y_i_current += self.alpha * factor * dy
+
+            if vertex_i:
+                vertex_i.x = x_i_current
+                vertex_i.y = y_i_current
+                print(f"Новые координаты вершины {vertex_id_i}: ({x_i_current}, {y_i_current})")
+            
+            self.i_current.append((vertex_id_i, x_i_current, y_i_current))
+
 
 
 
