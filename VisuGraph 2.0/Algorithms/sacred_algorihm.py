@@ -35,10 +35,11 @@ class SacredAlgorithm:
         if width <= 0 or height <= 0:
             raise ValueError(f"Невозможные размеры холста: ширина = {width}, высота = {height}")
 
-        self.canvas_width = width
-        self.canvas_height = height
+        self.canvas_width = round(width*0.9)
+        self.canvas_height = round(height*0.9)
   
-    def sacred_algorithm_calling(self):      
+    def sacred_algorithm_calling(self):
+        self.clear_canvas_and_graph()      
         self.set_canvas_dimensions()
         t_iterations, ok = QtWidgets.QInputDialog.getInt(
             None, "Количество итераций", "Введите количество итераций:", 10, 1, 100000, 1
@@ -83,8 +84,9 @@ class SacredAlgorithm:
         self.convert_edges_to_theoretical_distances()
         self.randomize_vertex_positions()
         self.scale_vertices_to_canvas()
-        self.draw_vertices_from_scaled_data()
         self.calculate_euclidean_distances()
+        self.draw_vertices_and_edges_from_scaled_data()
+        self.calculate_error()
 
     def validate_adjacency_matrix(matrix):
         size = len(matrix)
@@ -135,17 +137,19 @@ class SacredAlgorithm:
             print(item)
         print(f"Размеры холста обновлены: Ширина = {self.canvas_width}, Высота = {self.canvas_height}")
 
-    def calculate_euclidean_distances(self):
-        """Вычисляет евклидовы расстояния между всеми парами вершин и сохраняет их в self.d_evklid."""
-        self.d_evklid = []  
-        for i in range(len(self.scale_screen)):
-            for j in range(i + 1, len(self.scale_screen)):  
-                vertex_id_1, x1, y1 = self.scale_screen[i]
-                vertex_id_2, x2, y2 = self.scale_screen[j]
+    import math
 
+    def calculate_euclidean_distances(self):
+        """Вычисляет евклидовы расстояния между всеми парами вершин из self.i_previous и сохраняет их в self.d_evklid."""
+        self.d_evklid = [] 
+        for i in range(len(self.i_previous)):
+            for j in range(i + 1, len(self.i_previous)):  
+                vertex_id_1, x1, y1 = self.i_previous[i]
+                vertex_id_2, x2, y2 = self.i_previous[j]
                 distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                 self.d_evklid.append((vertex_id_1, vertex_id_2, distance))
                 print(f"Евклидово расстояние между вершинами {vertex_id_1} и {vertex_id_2}: {distance:.2f}")
+
 
 
     def randomize_vertex_positions(self):
@@ -193,9 +197,43 @@ class SacredAlgorithm:
         print(f"Коэффициенты масштаба: X={scale_x}, Y={scale_y}")
 
 
-    def draw_vertices_from_scaled_data(self):
-        """Отрисовывает вершины на холсте из данных в self.scale_screen."""
+    def draw_vertices_and_edges_from_scaled_data(self):
+        """Отрисовывает вершины и рёбра на холсте из данных в self.scale_screen и self.d_evklid."""
         for vertex_id, scaled_x, scaled_y in self.scale_screen:
             vertex = self.graph.vertices.get(vertex_id)
             if vertex:
                 self.canvas.create_vertex(QPointF(scaled_x, scaled_y))
+
+        for start_id, end_id, weight in self.d_evklid:
+            start_vertex = self.graph.vertices.get(start_id)
+            end_vertex = self.graph.vertices.get(end_id)
+
+            if start_vertex and end_vertex:
+                weight = round(weight)
+                self.canvas.create_edge_special(start_id, end_id, weight)
+
+    def clear_canvas_and_graph(self):
+        """Очистить холст и граф от старых данных (вершин и рёбер)."""
+        self.canvas.graph.vertices.clear()  # Очищаем вершины в графе
+        self.canvas.graph.edges.clear()  # Очищаем рёбра в графе
+        self.canvas.scene.clear()  # Очищаем холст
+        self.canvas.update() 
+        self.graph.vertices.clear()
+        self.graph.edges.clear()
+        self.available_ids = []
+
+    def calculate_error(self):
+        """Вычисляет ошибку по формуле sum по i,j i>j (dij - dij_evklid)^2 и сохраняет её в self.error."""
+        euclidean_distances = { (min(start, end), max(start, end)): dist for start, end, dist in self.d_evklid }
+        total_error = 0
+        for start, end, dij in self.d:  
+            if (min(start, end), max(start, end)) not in euclidean_distances:
+                continue
+            dij_evklid = euclidean_distances[(min(start, end), max(start, end))]
+            error_term = (dij - dij_evklid) ** 2
+            total_error += error_term
+        self.error.append(total_error)
+        print(f"Общая ошибка: {total_error}")
+
+
+
