@@ -9,7 +9,6 @@ class StartWindowFunctional:
         self.ui = Ui_start_window()
         self.ui.setupUi(self.start_window)
         
-        # Подключаем кнопки к методам
         self.ui.create_graph_button.clicked.connect(self.open_work_window)
         self.ui.settings_button.clicked.connect(self.open_settings_window)
         self.ui.exit_button.clicked.connect(self.exit_application)

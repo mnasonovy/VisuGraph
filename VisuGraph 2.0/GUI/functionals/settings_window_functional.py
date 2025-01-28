@@ -8,7 +8,6 @@ class SettingsWindowFunctional:
         self.ui = Ui_SettingsWindow()
         self.ui.setupUi(self.settings_window)
 
-        # Подключение кнопок к методам
         self.ui.return_to_menu_button.clicked.connect(self.return_to_main_menu)
 
     def return_to_main_menu(self):
